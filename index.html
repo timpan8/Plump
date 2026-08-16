@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e2402f">
+<title>Plump – resultattavla</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Plump">
+<style>
+  :root{
+    --bg:#f6f5f3; --card:#fff; --ink:#181613; --muted:#726c64;
+    --line:#e0dcd5; --accent:#e2402f; --accent-ink:#fff;
+    --good:#1f7a4d; --shade:#faf8f5;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14120f; --card:#1d1a16; --ink:#f2efe9; --muted:#a49c90;
+      --line:#332e28; --accent:#f0563f; --accent-ink:#1a1512;
+      --good:#4cc38a; --shade:#221e1a;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+
+  .topbar{
+    display:flex; align-items:center; gap:10px;
+    padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+    background:var(--accent); color:var(--accent-ink);
+    position:sticky; top:0; z-index:30;
+  }
+  .topbar h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.5px;flex:1}
+  .topbar .tools{display:flex;gap:8px}
+  .topbar button{
+    background:rgba(0,0,0,.15); color:inherit; border:0; border-radius:10px;
+    padding:8px 11px; font-size:14px; font-weight:600;
+  }
+  .topbar button:disabled{opacity:.4}
+
+  main{max-width:900px;margin:0 auto;padding:16px 14px 40px;width:100%}
+
+  /* under match: tabellen scrollar för sig så rubriken alltid syns */
+  body.playing{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+  body.playing #game{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px calc(12px + env(safe-area-inset-bottom))}
+  body.playing .tablewrap{flex:1;min-height:0}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+
+  /* ---- Spelare ---- */
+  .players{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .prow{display:flex;gap:8px;align-items:center}
+  .prow .num{width:22px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+  .prow input{
+    flex:1;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;
+    background:var(--bg);
+  }
+  .prow .del{background:none;border:0;color:var(--muted);font-size:22px;padding:4px 10px;line-height:1}
+  .btn{
+    border:1px solid var(--line);background:var(--bg);border-radius:10px;
+    padding:12px 14px;font-weight:600;
+  }
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;width:100%;padding:15px;font-size:17px}
+  .btn.wide{width:100%}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .row + .row{margin-top:12px}
+  label.field{display:flex;align-items:center;gap:10px;flex:1}
+  select{padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+  .check{display:flex;align-items:center;gap:10px}
+  .check input{width:20px;height:20px;accent-color:var(--accent)}
+  .hint{color:var(--muted);font-size:13px;margin:10px 0 0}
+  .seq{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;margin-top:10px;word-spacing:2px}
+
+  /* ---- Tabell ---- */
+  .tablewrap{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:auto; -webkit-overflow-scrolling:touch;
+  }
+  table{border-collapse:separate;border-spacing:0;width:100%}
+  th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center}
+  th:last-child,td:last-child{border-right:0}
+  tr:last-child td{border-bottom:0}
+
+  thead th{position:sticky;top:0;z-index:10;background:var(--card)}
+  th.corner,td.cards{
+    position:sticky;left:0;z-index:12;background:var(--shade);
+    width:56px;min-width:56px;
+  }
+  thead th.corner{z-index:20}
+  th.name{padding:8px 6px 4px;min-width:78px}
+  th.name .nm{font-size:14px;font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  th.name .tot{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;padding-bottom:6px}
+  th.name.lead .tot{color:var(--good)}
+  th.corner span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 4px}
+
+  td.cards{font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);font-size:15px}
+  td.cards b{display:block;font-size:19px;color:var(--ink)}
+  tr.active td.cards{color:var(--accent)}
+  tr.active td.cards b{color:var(--accent)}
+
+  td.cell{padding:0}
+  td.cell button{
+    width:100%;border:0;background:none;padding:9px 2px 7px;display:block;
+    font-variant-numeric:tabular-nums;
+  }
+  td.cell .pts{font-size:19px;font-weight:700;display:block;min-height:23px}
+  td.cell .run{font-size:11px;color:var(--muted);display:block;min-height:14px}
+  td.cell.empty .pts{color:var(--line)}
+  td.cell.zero .pts{color:var(--muted)}
+  tr.active td.cell{background:var(--shade)}
+  td.cell.over{box-shadow:inset 0 0 0 2px var(--accent)}
+
+  .banner{
+    margin-top:14px;padding:14px;border-radius:var(--radius);
+    background:var(--card);border:1px solid var(--line);text-align:center;font-weight:700;
+  }
+  .warn{margin-top:10px;color:var(--accent);font-size:13px;text-align:center}
+  .foot{display:flex;gap:10px;margin-top:14px}
+  .foot .btn{flex:1}
+
+  /* ---- Poängväljare ---- */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+  .backdrop[hidden]{display:none}
+  .sheet{
+    background:var(--card);width:100%;max-width:520px;
+    border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+    animation:up .18s ease-out;
+  }
+  @keyframes up{from{transform:translateY(18px);opacity:.4}to{transform:none;opacity:1}}
+  .sheet h3{margin:0 0 2px;font-size:18px}
+  .sheet p{margin:0 0 14px;color:var(--muted);font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .grid button{
+    border:1px solid var(--line);background:var(--bg);border-radius:12px;
+    padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .grid button .k{font-size:13px;color:var(--muted)}
+  .grid button .p{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .grid button.sel{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+  .grid button.sel .k{color:inherit;opacity:.8}
+  .sheet .close{margin-top:12px;width:100%;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:600}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>PLUMP</h1>
+  <div class="tools">
+    <button id="undoBtn" type="button" hidden>Ångra</button>
+    <button id="editBtn" type="button" hidden>Spelare</button>
+  </div>
+</header>
+
+<!-- ============ START ============ -->
+<main id="setup">
+  <div class="panel">
+    <h2>Spelare</h2>
+    <div class="players" id="playerList"></div>
+    <button class="btn wide" id="addPlayer" type="button">+ Lägg till spelare</button>
+  </div>
+
+  <div class="panel">
+    <h2>Rundor</h2>
+    <div class="row">
+      <label class="field">Från
+        <select id="maxCards"></select>
+      </label>
+      <label class="field">ner till
+        <select id="minCards">
+          <option value="1">1 kort</option>
+          <option value="2" selected>2 kort</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label class="check"><input type="checkbox" id="upAgain" checked> …och upp igen</label>
+    </div>
+    <div class="seq" id="seqPreview"></div>
+    <p class="hint">Poäng: 0 stick = 0 poäng (plump), annars 10 + antal stick. 1&nbsp;→&nbsp;11, 2&nbsp;→&nbsp;12, 8&nbsp;→&nbsp;18.</p>
+  </div>
+
+  <button class="btn primary" id="startBtn" type="button">Starta match</button>
+  <button class="btn wide" id="backBtn" type="button" hidden style="margin-top:10px">← Tillbaka till matchen</button>
+  <p class="hint" id="setupHint"></p>
+</main>
+
+<!-- ============ SPEL ============ -->
+<main id="game" hidden>
+  <div class="tablewrap">
+    <table id="board"></table>
+  </div>
+  <div id="warn" class="warn" hidden></div>
+  <div id="banner" class="banner" hidden></div>
+  <div class="foot">
+    <button class="btn" id="newSame" type="button">Ny match</button>
+    <button class="btn" id="reset" type="button">Rensa allt</button>
+  </div>
+</main>
+
+<!-- ============ VÄLJARE ============ -->
+<div class="backdrop" id="backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h3 id="sheetTitle"></h3>
+    <p id="sheetSub"></p>
+    <div class="grid" id="sheetGrid"></div>
+    <button class="close" id="sheetClose" type="button">Stäng</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var KEY = "plump-state-v1";
+  var MAX_PLAYERS = 10;
+
+  var state = load() || { players:["",""], rounds:[], scores:{}, playerCount:0, started:false };
+  var history = [];      // för Ångra
+  var editing = null;    // {r,p}
+
+  /* ---------- lagring ---------- */
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(!raw) return null;
+      var s = JSON.parse(raw);
+      if(!s || !Array.isArray(s.players)) return null;
+      s.scores = s.scores || {};
+      s.rounds = s.rounds || [];
+      if(typeof s.playerCount !== "number") s.playerCount = s.players.length;
+      return s;
+    }catch(e){ return null; }
+  }
+
+  /* ---------- poäng ---------- */
+  function points(tricks){ return tricks === 0 ? 0 : 10 + tricks; }
+  function scoreOf(r,p){
+    var v = state.scores[r + ":" + p];
+    return (v === undefined || v === null) ? null : v;
+  }
+  function totalAfter(p, r){
+    var sum = 0;
+    for(var i=0;i<=r;i++){
+      var v = scoreOf(i,p);
+      if(v !== null) sum += points(v);
+    }
+    return sum;
+  }
+  function total(p){ return totalAfter(p, state.rounds.length - 1); }
+
+  function buildSequence(max, min, upAgain){
+    var seq = [], i;
+    if(min > max) min = max;
+    for(i=max;i>=min;i--) seq.push(i);
+    if(upAgain) for(i=min+1;i<=max;i++) seq.push(i);
+    return seq;
+  }
+
+  /* ---------- START-VYN ---------- */
+  var el = {
+    setup:document.getElementById("setup"),
+    game:document.getElementById("game"),
+    playerList:document.getElementById("playerList"),
+    addPlayer:document.getElementById("addPlayer"),
+    maxCards:document.getElementById("maxCards"),
+    minCards:document.getElementById("minCards"),
+    upAgain:document.getElementById("upAgain"),
+    seqPreview:document.getElementById("seqPreview"),
+    startBtn:document.getElementById("startBtn"),
+    backBtn:document.getElementById("backBtn"),
+    setupHint:document.getElementById("setupHint"),
+    board:document.getElementById("board"),
+    banner:document.getElementById("banner"),
+    warn:document.getElementById("warn"),
+    undoBtn:document.getElementById("undoBtn"),
+    editBtn:document.getElementById("editBtn"),
+    newSame:document.getElementById("newSame"),
+    reset:document.getElementById("reset"),
+    backdrop:document.getElementById("backdrop"),
+    sheetTitle:document.getElementById("sheetTitle"),
+    sheetSub:document.getElementById("sheetSub"),
+    sheetGrid:document.getElementById("sheetGrid"),
+    sheetClose:document.getElementById("sheetClose")
+  };
+
+  for(var n=1;n<=13;n++){
+    var o = document.createElement("option");
+    o.value = n; o.textContent = n + " kort";
+    el.maxCards.appendChild(o);
+  }
+  el.maxCards.value = 8;
+
+  function renderPlayers(){
+    el.playerList.innerHTML = "";
+    state.players.forEach(function(name, i){
+      var row = document.createElement("div");
+      row.className = "prow";
+
+      var num = document.createElement("span");
+      num.className = "num"; num.textContent = (i+1) + ".";
+
+      var inp = document.createElement("input");
+      inp.type = "text"; inp.value = name;
+      inp.placeholder = "Spelare " + (i+1);
+      inp.autocomplete = "off";
+      inp.addEventListener("input", function(){ state.players[i] = inp.value; save(); });
+
+      var del = document.createElement("button");
+      del.className = "del"; del.type = "button"; del.textContent = "×";
+      del.setAttribute("aria-label", "Ta bort spelare " + (i+1));
+      del.addEventListener("click", function(){
+        if(state.players.length <= 2) return;
+        state.players.splice(i,1); save(); renderPlayers(); updateSetupHint();
+      });
+
+      row.appendChild(num); row.appendChild(inp); row.appendChild(del);
+      el.playerList.appendChild(row);
+    });
+    el.addPlayer.disabled = state.players.length >= MAX_PLAYERS;
+    updateSetupHint();
+  }
+
+  function maxCardsForPlayers(){
+    var p = state.players.length;
+    return Math.max(1, Math.min(13, Math.floor(52 / p)));
+  }
+
+  function updateSetupHint(){
+    var cap = maxCardsForPlayers();
+    if(Number(el.maxCards.value) > cap) el.maxCards.value = cap;
+    Array.prototype.forEach.call(el.maxCards.options, function(o){
+      o.disabled = Number(o.value) > cap;
+    });
+    var seq = buildSequence(Number(el.maxCards.value), Number(el.minCards.value), el.upAgain.checked);
+    el.seqPreview.textContent = seq.length + " rundor:  " + seq.join("  ·  ");
+    el.setupHint.textContent = "Med " + state.players.length +
+      " spelare räcker leken till " + cap + " kort var.";
+  }
+
+  el.addPlayer.addEventListener("click", function(){
+    if(state.players.length >= MAX_PLAYERS) return;
+    state.players.push(""); save(); renderPlayers();
+    var inputs = el.playerList.querySelectorAll("input");
+    inputs[inputs.length-1].focus();
+  });
+  el.maxCards.addEventListener("change", updateSetupHint);
+  el.minCards.addEventListener("change", updateSetupHint);
+  el.upAgain.addEventListener("change", updateSetupHint);
+
+  function hasScores(){ for(var k in state.scores) return true; return false; }
+
+  function showSetup(){
+    el.game.hidden = true; el.setup.hidden = false;
+    el.editBtn.hidden = true; el.undoBtn.hidden = true;
+    document.body.classList.remove("playing");
+    el.backBtn.hidden = !(state.rounds.length && hasScores());
+    el.startBtn.textContent = el.backBtn.hidden ? "Starta match" : "Starta om matchen";
+    renderPlayers();
+  }
+
+  el.startBtn.addEventListener("click", function(){
+    // knappen betyder alltid "börja om från noll" – vill man bara rätta ett
+    // namn mitt i matchen använder man "Tillbaka till matchen"
+    if(hasScores() && !confirm("Starta om? Alla poäng nollställs.")) return;
+
+    state.players = state.players.map(function(nm,i){
+      return (nm || "").trim() || ("Spelare " + (i+1));
+    });
+    state.rounds = buildSequence(Number(el.maxCards.value), Number(el.minCards.value), el.upAgain.checked);
+    state.playerCount = state.players.length;
+    state.scores = {};
+    state.started = true;
+    history = [];
+    save(); renderGame();
+  });
+
+  el.backBtn.addEventListener("click", function(){
+    if(state.players.length !== state.playerCount){
+      alert("Antalet spelare har ändrats. Tryck på ”Starta om matchen” för att spela med den nya uppställningen – då nollställs poängen.");
+      return;
+    }
+    state.players = state.players.map(function(nm,i){
+      return (nm || "").trim() || ("Spelare " + (i+1));
+    });
+    state.started = true; save(); renderGame();
+  });
+
+  /* ---------- SPELVYN ---------- */
+  function firstEmptyRound(){
+    for(var r=0;r<state.rounds.length;r++){
+      for(var p=0;p<state.players.length;p++){
+        if(scoreOf(r,p) === null) return r;
+      }
+    }
+    return -1;
+  }
+
+  function renderGame(){
+    el.setup.hidden = true;
+    el.game.hidden = false;
+    document.body.classList.add("playing");
+    el.editBtn.hidden = false;
+    el.undoBtn.hidden = false;
+    el.undoBtn.disabled = history.length === 0;
+
+    var active = firstEmptyRound();
+    var totals = state.players.map(function(_,p){ return total(p); });
+    var best = Math.max.apply(null, totals);
+
+    var t = document.createElement("table");
+
+    var thead = document.createElement("thead");
+    var hr = document.createElement("tr");
+    var corner = document.createElement("th");
+    corner.className = "corner";
+    corner.innerHTML = "<span>Kort</span>";
+    hr.appendChild(corner);
+    state.players.forEach(function(name,p){
+      var th = document.createElement("th");
+      th.className = "name" + (totals[p] === best && best > 0 ? " lead" : "");
+      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name;
+      var tot = document.createElement("span"); tot.className = "tot"; tot.textContent = totals[p];
+      th.appendChild(nm); th.appendChild(tot);
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    t.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    state.rounds.forEach(function(cards, r){
+      var tr = document.createElement("tr");
+      if(r === active) tr.className = "active";
+
+      var td0 = document.createElement("td");
+      td0.className = "cards";
+      td0.innerHTML = "<b>" + cards + "</b>";
+      tr.appendChild(td0);
+
+      var sumTricks = 0;
+      state.players.forEach(function(_,p){
+        var v = scoreOf(r,p);
+        if(v !== null) sumTricks += v;
+      });
+
+      state.players.forEach(function(_,p){
+        var v = scoreOf(r,p);
+        var td = document.createElement("td");
+        td.className = "cell" + (v === null ? " empty" : (v === 0 ? " zero" : "")) +
+                       (sumTricks > cards ? " over" : "");
+        var b = document.createElement("button");
+        b.type = "button";
+        b.innerHTML =
+          '<span class="pts">' + (v === null ? "–" : points(v)) + '</span>' +
+          '<span class="run">' + (v === null ? "" : totalAfter(p, r)) + '</span>';
+        b.addEventListener("click", function(){ openSheet(r,p); });
+        td.appendChild(b);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    t.appendChild(tbody);
+
+    el.board.replaceWith(t);
+    t.id = "board";
+    el.board = t;
+
+    var activeRow = t.querySelector("tr.active");
+    if(activeRow && activeRow.scrollIntoView) activeRow.scrollIntoView({block:"nearest"});
+
+    // varning om fler stick än kort i någon runda
+    var bad = [];
+    state.rounds.forEach(function(cards,r){
+      var s = 0, any = false;
+      state.players.forEach(function(_,p){
+        var v = scoreOf(r,p); if(v !== null){ s += v; any = true; }
+      });
+      if(any && s > cards) bad.push(r+1);
+    });
+    if(bad.length){
+      el.warn.hidden = false;
+      el.warn.textContent = "Obs: fler stick än kort i runda " + bad.join(", ") + ".";
+    } else el.warn.hidden = true;
+
+    if(active === -1){
+      var winners = state.players.filter(function(_,p){ return totals[p] === best; });
+      el.banner.hidden = false;
+      el.banner.textContent = "🏆 " + winners.join(" & ") + " vinner med " + best + " poäng!";
+    } else {
+      el.banner.hidden = true;
+    }
+  }
+
+  /* ---------- poängväljaren ---------- */
+  function openSheet(r,p){
+    editing = {r:r,p:p};
+    var cards = state.rounds[r];
+    var cur = scoreOf(r,p);
+    el.sheetTitle.textContent = state.players[p];
+    el.sheetSub.textContent = "Runda " + (r+1) + " · " + cards + " kort";
+    el.sheetGrid.innerHTML = "";
+
+    for(var i=0;i<=cards;i++){
+      (function(tricks){
+        var b = document.createElement("button");
+        b.type = "button";
+        if(cur === tricks) b.className = "sel";
+        b.innerHTML = '<span class="k">' + tricks + " stick" + '</span>' +
+                      '<span class="p">' + points(tricks) + '</span>';
+        b.addEventListener("click", function(){ setScore(r,p,tricks); });
+        el.sheetGrid.appendChild(b);
+      })(i);
+    }
+
+    var clear = document.createElement("button");
+    clear.type = "button";
+    clear.innerHTML = '<span class="k">rensa</span><span class="p">–</span>';
+    clear.addEventListener("click", function(){ setScore(r,p,null); });
+    el.sheetGrid.appendChild(clear);
+
+    el.backdrop.hidden = false;
+  }
+
+  function closeSheet(){ el.backdrop.hidden = true; editing = null; }
+
+  function setScore(r,p,tricks){
+    var key = r + ":" + p;
+    history.push({key:key, prev: state.scores[key]});
+    if(history.length > 100) history.shift();
+    if(tricks === null) delete state.scores[key];
+    else state.scores[key] = tricks;
+    save(); closeSheet(); renderGame();
+  }
+
+  el.sheetClose.addEventListener("click", closeSheet);
+  el.backdrop.addEventListener("click", function(e){ if(e.target === el.backdrop) closeSheet(); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeSheet(); });
+
+  el.undoBtn.addEventListener("click", function(){
+    var h = history.pop();
+    if(!h) return;
+    if(h.prev === undefined) delete state.scores[h.key];
+    else state.scores[h.key] = h.prev;
+    save(); renderGame();
+  });
+
+  el.editBtn.addEventListener("click", function(){
+    state.started = false; save();
+    showSetup();
+  });
+
+  el.newSame.addEventListener("click", function(){
+    if(!confirm("Starta ny match med samma spelare?")) return;
+    state.scores = {}; history = []; save(); renderGame();
+  });
+
+  el.reset.addEventListener("click", function(){
+    if(!confirm("Rensa allt och börja om från spelarlistan?")) return;
+    state = { players:["",""], rounds:[], scores:{}, playerCount:0, started:false };
+    history = []; save();
+    el.maxCards.value = 8; el.minCards.value = 2; el.upAgain.checked = true;
+    showSetup();
+  });
+
+  /* ---------- start ---------- */
+  if(state.rounds.length){
+    el.maxCards.value = Math.max.apply(null, state.rounds);
+    el.minCards.value = Math.min.apply(null, state.rounds) === 1 ? 1 : 2;
+  }
+  if(state.started && state.rounds.length && state.players.length >= 2){
+    renderPlayers();
+    renderGame();
+  } else {
+    showSetup();
+  }
+})();
+</script>
+</body>
+</html>

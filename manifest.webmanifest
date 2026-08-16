@@ -1,0 +1,14 @@
+{
+  "name": "Plump – resultattavla",
+  "short_name": "Plump",
+  "description": "Digital resultattavla för kortspelet Plump.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f5f3",
+  "theme_color": "#e2402f",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
