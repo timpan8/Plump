@@ -10,16 +10,41 @@ mobil, platta eller dator.
    ut. Standard är 8 kort ner till 2 och upp igen – samma trappa som på pappret.
 2. **Tabellen** visar en rad per runda. Vänsterkolumnen (som ligger kvar när du
    scrollar i sidled) visar antal kort och vems giv rundan är.
-3. **Tryck på en ruta** och välj resultat:
-   * **plump** (missat bud) = 0 poäng, visas som ●
-   * **klarad nolla** = 5 poäng
-   * 1 stick = 11 poäng, 2 = 12, 3 = 13 … 8 = 18
-4. Efter varje val hoppar väljaren vidare till nästa spelare i rundan, så en
-   hel runda matas in med ett tryck per spelare. När rundan är full stängs
-   väljaren så du hinner se ställningen.
-5. Varje ruta visar rundans poäng stort och **den löpande totalen** litet under.
-   Totalsumman per spelare står alltid överst i den fastnålade rubriken.
-6. Ledaren markeras i grönt, och när sista rundan är ifylld visas vinnaren.
+3. **Den röda knappen under tabellen visar alltid nästa steg** – vems bud eller
+   vems resultat som står i tur. Tryck på den och fyll i.
+
+### Först bud, sedan resultat
+
+Varje runda matas in i två svep:
+
+* **Buden.** Alla säger hur många stick de tror de tar, 0 upp till antalet kort.
+  Turordningen följer bordet: den som sitter efter given bjuder först och
+  **given bjuder sist**. Väljaren går automatiskt vidare till nästa spelare och
+  stannar när alla bud är lagda, så handen kan spelas.
+* **Resultatet.** När handen är spelad fyller du i, spelare för spelare, om
+  budet **klarades** (10 + budet, eller 5 poäng för en klarad nolla) eller blev
+  **plump** (0 poäng, visas som ●).
+
+Innan resultatet är ifyllt står budet kvar som en grå siffra med texten *bud*
+i rutan, så man ser vad var och en satsade.
+
+### Budspärren för given
+
+Budsumman får inte bli exakt lika med antalet kort, och det är given som får ta
+smällen eftersom hen bjuder sist. Spelar ni 5 kort och de två första bjuder 2
+och 2, så är **1 spärrat** för given – appen gråar ut den knappen och skriver
+varför. Alla andra bud går att välja.
+
+### Låst till aktuell runda
+
+Bara den runda som står i tur går att fylla i, så man inte råkar skriva på fel
+rad. Trycker du på en annan rad säger appen till istället för att öppna
+väljaren. Behöver du rätta något i efterhand trycker du på **Rätta äldre**, då
+låses hela tavlan upp tills du trycker igen (låset slås alltid på vid omstart).
+
+Varje ruta visar rundans poäng stort och **den löpande totalen** litet under.
+Totalsumman per spelare står alltid överst i den fastnålade rubriken. Ledaren
+markeras i grönt, och när sista rundan är ifylld visas vinnaren.
 
 Övrigt: **Ångra** ångrar senaste inmatningen och **Ny match** nollställer
 poängen men behåller spelarna. **Spelare** går tillbaka till startvyn – där
@@ -29,9 +54,9 @@ Allt sparas automatiskt i webbläsaren, så matchen ligger kvar om telefonen
 låser sig eller fliken stängs. Är lagring blockerad (privat läge) hålls
 matchen i minnet istället för att appen ska sluta fungera.
 
-En liten kontroll finns också: om de inmatade sticken inte får plats i rundan
-ramas rutorna in i rött och en varning visas. Plump och klarad nolla räknas
-inte som stick i den kontrollen, eftersom de sticken inte skrivs upp.
+En liten kontroll finns också: om de klarade buden i en runda tillsammans är
+fler än antalet kort visas en varning – då har något matats in fel. Plumpade
+bud räknas inte, eftersom de sticken inte skrivs upp.
 
 ## Kör den lokalt
 

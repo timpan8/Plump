@@ -78,12 +78,17 @@ are the cases worth encoding, in roughly this order of value:
 ## Architecture notes
 
 The file is organized as: state and persistence, pure scoring helpers, the setup
-view, the game view, the score picker. Keep that separation — the scoring
-helpers (`points`, `totalAfter`, `buildSequence`, `knownTricks`) touch no DOM and
-are the part where real bugs live.
+view, the game view, the bid/result picker. Keep that separation — the helpers
+(`pointsOf`, `totalAfter`, `buildSequence`, `bidOrder`, `forbiddenBid`,
+`knownTricks`) touch no DOM and are the part where real bugs live.
 
+- **A cell is `{b, m}`** — the bid, and whether it was made. `m: null` means the
+  bid is down but the hand has not been played yet, and that is what drives the
+  two-phase round: `nextBid(r)` returns a player while bids are missing, then
+  `nextResult(r)` takes over. `currentRound()` is the first round that isn't
+  finished, and everything else is locked unless the user turns on fix mode.
 - **The stored state is a file format.** It carries a version (`v`) and the key
-  is versioned too (`plump-state-v3`). `load()` refuses anything with a
+  is versioned too (`plump-state-v4`). `load()` refuses anything with a
   different version rather than trying to migrate, so an old save can never
   corrupt a new build. Bump both when the shape changes.
 - **Storage is wrapped, never assumed.** `localStorage` throws in private mode
@@ -107,11 +112,14 @@ section, not in test fixtures.
   fewer each round down to a chosen turning point (default 2), then back up.
   Both ends and the "and up again" half are configurable at setup.
 - **Deal rotation:** chosen first dealer, then clockwise by round index.
+- **Bidding order:** the player after the dealer bids first; **the dealer bids
+  last.** This is what makes the restriction below land on the dealer.
+- **Bid-total restriction:** the bids may not sum to exactly the hand size, and
+  the dealer carries it. When every other player has bid, the value that would
+  make the total equal the hand size is disabled in the dealer's picker (5-card
+  round, others bid 2 and 2 → the dealer cannot bid 1). Bids summing to *more*
+  than the hand size are fine; only the exact total is forbidden.
 - **Players:** 2–10, capped further by what a 52-card deck can deal.
-- **Bid-total restriction** (whether the bids may sum to the hand size, and who
-  is constrained): _not modelled._ The app only records outcomes, so the table
-  enforces this rule itself. The entered tricks are checked against hand size
-  and flagged, but never blocked.
 
 ## Conventions
 
