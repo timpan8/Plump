@@ -87,6 +87,12 @@ view, the game view, the bid/result picker. Keep that separation — the helpers
   two-phase round: `nextBid(r)` returns a player while bids are missing, then
   `nextResult(r)` takes over. `currentRound()` is the first round that isn't
   finished, and everything else is locked unless the user turns on fix mode.
+- **Turn order is guarded, not enforced.** Entering a player out of order was
+  the mistake that actually happened at the table, so `tapCell` refuses to open
+  the wrong player's picker and shows the bid order with a button to the right
+  player instead. The override is one deliberate extra tap — keep it reachable;
+  the goal is making the mistake harder, not impossible. Fix mode skips the
+  guard entirely, since correcting is the whole point there.
 - **`buildBoard(g, opts)` renders any match**, live or archived. Every helper
   takes the match (`g`: players, rounds, cells, firstDealer) as its first
   argument rather than reading the global — that is what lets the history view

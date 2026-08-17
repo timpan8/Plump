@@ -23,9 +23,16 @@ Varje runda matas in i två svep:
   Turordningen följer bordet: den som sitter efter given bjuder först och
   **given bjuder sist**. Väljaren går automatiskt vidare till nästa spelare och
   stannar när alla bud är lagda, så handen kan spelas.
+
+  Ordningen är svår att göra fel på: rutan för den som är i tur är inramad,
+  övriga tomma rutor är nedtonade, och trycker du på fel spelare öppnas inte
+  den rutan – i stället kommer en fråga som visar turordningen
+  (*Anna → Kalle → Tim (ger)*) med en knapp till rätt spelare. Vill du ändå
+  fylla i någon annan finns en andra knapp för det, men det kräver ett
+  medvetet tryck.
 * **Resultatet.** När handen är spelad fyller du i, spelare för spelare, om
   budet **klarades** (10 + budet, eller 5 poäng för en klarad nolla) eller blev
-  **plump** (0 poäng, visas som ●).
+  **plump** (0 poäng, visas som ●). Samma ordning och samma spärr gäller här.
 
 Innan resultatet är ifyllt står budet kvar som en grå siffra med texten *bud*
 i rutan, så man ser vad var och en satsade.

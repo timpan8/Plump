@@ -142,6 +142,8 @@
   td.cell.plumped .pts{color:var(--accent);font-size:17px}
   tr.active td.cell{background:var(--shade)}
   td.cell.turn{box-shadow:inset 0 0 0 2px var(--accent)}
+  /* tomma rutor som inte är i tur tonas ner så blicken hamnar på rätt ruta */
+  tr.active td.cell.waiting button{opacity:.4}
   td.cell.over .pts{text-decoration:underline wavy var(--accent)}
   tr.locked td.cell button{cursor:default}
 
@@ -197,7 +199,15 @@
   .grid button.made .p{color:var(--good)}
   .grid button.plump{border-color:var(--accent)}
   .grid button.plump .p{color:var(--accent)}
-  .grid.two button{padding:14px 6px}
+  .grid.two button{padding:14px 6px;min-width:0}
+  .grid.two button .p{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grid button.turnpick .p{font-size:18px}
+  .sheet .order{
+    margin:0 0 12px;font-size:13px;color:var(--ink);font-weight:600;
+    background:var(--shade);border-radius:10px;padding:9px 11px;line-height:1.5;
+  }
+  .sheet .order b{color:var(--accent)}
+  .sheet .order i{font-style:normal;color:var(--muted);font-weight:600}
   .sheet .extras{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}
   .sheet .extras button{
     flex:1;padding:11px;border-radius:12px;border:1px solid var(--line);
@@ -293,6 +303,7 @@
     <div class="meta" id="sheetMeta"></div>
     <h3 id="sheetTitle"></h3>
     <p class="sub" id="sheetSub"></p>
+    <p class="order" id="sheetOrder" hidden></p>
     <div class="grid" id="sheetGrid"></div>
     <div class="extras" id="sheetExtras"></div>
   </div>
@@ -473,6 +484,7 @@
     sheetMeta:document.getElementById("sheetMeta"),
     sheetTitle:document.getElementById("sheetTitle"),
     sheetSub:document.getElementById("sheetSub"),
+    sheetOrder:document.getElementById("sheetOrder"),
     sheetGrid:document.getElementById("sheetGrid"),
     sheetExtras:document.getElementById("sheetExtras")
   };
@@ -543,10 +555,12 @@
         var c = cellOf(g,r,p);
         var pending = c && (c.m === null || c.m === undefined);
         var td = document.createElement("td");
+        var isTurn = isActive && p === opts.turnP;
         td.className = "cell" +
           (!c ? " empty" : (pending ? " bidonly" : (c.m === false ? " plumped" : ""))) +
           (over ? " over" : "") +
-          (isActive && p === opts.turnP ? " turn" : "");
+          (isTurn ? " turn" : "") +
+          (isActive && !isTurn && !c && opts.turnP !== null && opts.turnP !== undefined ? " waiting" : "");
 
         var inner = document.createElement(opts.onCell ? "button" : "div");
         if(opts.onCell) inner.type = "button"; else inner.className = "static";
@@ -904,29 +918,102 @@
 
   function tapCell(r,p){
     var active = currentRound(state);
-    if(!fixMode && r !== active){
+    if(fixMode){
+      var c = cellOf(state,r,p);
+      openSheet(r, p, c ? "resultat" : "bud");
+      return;
+    }
+    if(r !== active){
       toast(active === -1
         ? "Matchen är slut. Tryck ”Rätta äldre” för att ändra."
         : "Bara runda " + (active+1) + " kan fyllas i. Tryck ”Rätta äldre” för att ändra.");
       return;
     }
-    var c = cellOf(state,r,p);
-    openSheet(r, p, c ? "resultat" : "bud");
+    // ordningen är den vanligaste felkällan: trycker man på fel spelare öppnas
+    // inte den rutan, utan en fråga som pekar på rätt spelare
+    var turnBid = nextBid(state,r);
+    var phase = turnBid !== null ? "bud" : "resultat";
+    var turnP = turnBid !== null ? turnBid : nextResult(state,r);
+    if(turnP !== null && p !== turnP){
+      openTurnWarning(r, p, turnP, phase);
+      return;
+    }
+    openSheet(r, p, phase);
+  }
+
+  /* Visar vem som egentligen är i tur, med turordningen utskriven. Man kan
+     fortfarande välja fel spelare, men bara med ett medvetet tryck. */
+  function openTurnWarning(r, tapped, turnP, phase){
+    sheetHead(r);
+    el.sheetGrid.innerHTML = "";
+    el.sheetExtras.innerHTML = "";
+    el.sheetSub.className = "sub";
+    el.sheetTitle.textContent = phase === "bud"
+      ? state.players[turnP] + " är i tur att bjuda"
+      : state.players[turnP] + " är i tur – fyll i resultatet";
+    el.sheetSub.textContent = phase === "bud"
+      ? "Den som sitter efter given bjuder först, given bjuder sist."
+      : "Resultaten fylls i samma ordning som buden lades.";
+    renderOrder(r, turnP);
+
+    el.sheetGrid.className = "grid two";
+    var right = document.createElement("button");
+    right.type = "button";
+    right.className = "turnpick sel";
+    right.innerHTML = '<span class="p"></span><span class="k">' +
+      (phase === "bud" ? "bjuder nu" : "fyll i resultat") + '</span>';
+    right.querySelector(".p").textContent = state.players[turnP];
+    right.addEventListener("click", function(){ openSheet(r, turnP, phase); });
+    el.sheetGrid.appendChild(right);
+
+    var anyway = document.createElement("button");
+    anyway.type = "button";
+    anyway.className = "turnpick";
+    anyway.innerHTML = '<span class="p"></span><span class="k">fyll i ändå</span>';
+    anyway.querySelector(".p").textContent = state.players[tapped];
+    anyway.addEventListener("click", function(){ openSheet(r, tapped, phase); });
+    el.sheetGrid.appendChild(anyway);
+
+    addExtra("Stäng", closeSheet);
+    el.backdrop.hidden = false;
+  }
+
+  /* "Anna → Kalle → Tim (ger)" med den som är i tur markerad */
+  function renderOrder(r, turnP){
+    var order = bidOrder(state,r);
+    var dealer = dealerIdx(state,r);
+    el.sheetOrder.innerHTML = "";
+    el.sheetOrder.hidden = false;
+    order.forEach(function(p, i){
+      if(i) el.sheetOrder.appendChild(document.createTextNode(" → "));
+      var node = document.createElement(p === turnP ? "b" : "span");
+      node.textContent = state.players[p];
+      el.sheetOrder.appendChild(node);
+      if(p === dealer){
+        var d = document.createElement("i");
+        d.textContent = " (ger)";
+        el.sheetOrder.appendChild(d);
+      }
+    });
   }
 
   /* ---------- väljaren ---------- */
+  function sheetHead(r){
+    el.sheetMeta.innerHTML = "";
+    el.sheetMeta.appendChild(document.createTextNode(
+      "Runda " + (r+1) + " av " + state.rounds.length + " · " + state.rounds[r] + " kort · "));
+    var d = document.createElement("b"); d.textContent = dealerName(state,r);
+    el.sheetMeta.appendChild(d);
+    el.sheetMeta.appendChild(document.createTextNode(" ger"));
+  }
+
   function openSheet(r,p,step){
     var cards = state.rounds[r];
     var c = cellOf(state,r,p);
     if(step === "resultat" && !c) step = "bud";
 
-    el.sheetMeta.innerHTML = "";
-    el.sheetMeta.appendChild(document.createTextNode(
-      "Runda " + (r+1) + " av " + state.rounds.length + " · " + cards + " kort · "));
-    var d = document.createElement("b"); d.textContent = dealerName(state,r);
-    el.sheetMeta.appendChild(d);
-    el.sheetMeta.appendChild(document.createTextNode(" ger"));
-
+    sheetHead(r);
+    renderOrder(r, p);
     el.sheetGrid.innerHTML = "";
     el.sheetExtras.innerHTML = "";
     el.sheetSub.className = "sub";
