@@ -4,10 +4,13 @@
 the table; this app only tracks bids, tricks won, and scores across rounds. Runs
 in the browser on phones and tablets, served as a static site from GitHub Pages.
 
-> **Status: greenfield.** As of this file's creation the repository is empty.
-> The toolchain below is the intended setup, not the observed one. Once real
-> code exists, correct anything here that drifted — the commands are the part
-> that matters most, since agents run them verbatim.
+> **Status: shipped, no toolchain.** The app is a single hand-written
+> `index.html` with inline CSS and JS — no build step, no package manager, no
+> dependencies. That is a deliberate choice, not an unfinished setup: the whole
+> app is small enough to read in one file, and it stays deployable by copying
+> files. Do not introduce npm, a bundler, or a framework without agreeing on it
+> first; several sections below used to describe a Vite/TypeScript stack that
+> was never built.
 
 ## Scope
 
@@ -31,97 +34,90 @@ reaching for a dependency:
   locally and restore exactly. Losing a game in progress is the worst bug this
   app can have.
 
+## Files
+
+| File | Contents |
+| --- | --- |
+| `index.html` | The entire app — markup, CSS, and JS in one file |
+| `sw.js` | Service worker, network-first with a cache fallback |
+| `manifest.webmanifest` | Home-screen install metadata |
+| `icon.svg`, `apple-touch-icon.png` | Icons |
+| `README.md` | User-facing description, in Swedish |
+
 ## Commands
 
-| Task | Command |
-| --- | --- |
-| Install | `npm ci` |
-| Dev server | `npm run dev` |
-| Unit tests | `npm test` |
-| Unit tests (watch) | `npm run test:watch` |
-| Coverage | `npm run test:coverage` |
-| Browser / E2E tests | `npm run test:e2e` |
-| Typecheck | `npm run typecheck` |
-| Lint | `npm run lint` |
-| Production build | `npm run build` |
+There are none. Open `index.html` in a browser — that is the dev loop, and it is
+the same file that gets deployed.
 
-Run `npm run typecheck && npm test` before committing. That pair catches most
-regressions cheaply; the E2E suite is slower and can be left to CI.
+Two consequences worth knowing:
 
-## Stack
+- **Relative URLs only.** The site is served from
+  `https://timpan8.github.io/Plump/`, not a domain root. Every reference in the
+  HTML, manifest, and service worker uses `./`-relative paths so the same files
+  work locally over `file://` and under the `/Plump/` prefix. An absolute `/…`
+  path 404s in production while working fine locally.
+- **The service worker is off over `file://`.** It only registers on `https:` or
+  `localhost`, so offline behavior can only be verified on a real deployment.
 
-- **Vite + TypeScript** — builds to plain static assets, which is what Pages
-  needs.
-- **Vitest** — unit tests, sharing Vite's config and transform pipeline.
-- **Playwright** — browser tests driven through mobile device emulation.
-- **GitHub Actions** — builds and deploys to Pages on push to the default
-  branch.
+## Testing
 
-### GitHub Pages base path
+There is no committed test suite. Changes are verified by driving the page with
+Playwright from a scratch script (mobile viewport, `chromium` from
+`/opt/pw-browsers`) and by reading screenshots. If a suite is ever added, these
+are the cases worth encoding, in roughly this order of value:
 
-This is a project site, so it is served from `https://timpan8.github.io/Plump/`,
-not from a domain root. Vite must be configured with `base: '/Plump/'` or every
-asset URL breaks in production while working fine in dev. A build that works
-locally and 404s on Pages is almost always this.
+- **Scoring: exhaustive.** Every branch of plump, made zero, and made bid.
+- **Named edge cases**, not just happy paths: everyone plumping, ties in the
+  final totals, a round where the entered tricks cannot fit the hand size.
+- **Persistence: round-trip.** Save mid-game, reload, assert identical state.
+  Add a case per stored-format version.
+- **UI: representative, not exhaustive.** Score a full round, reload mid-game
+  and confirm nothing was lost, check that the sticky header and the frozen
+  left column stay put while scrolling.
 
-## Architecture rule that matters most
+## Architecture notes
 
-**Keep scoring logic pure and separate from the DOM.**
+The file is organized as: state and persistence, pure scoring helpers, the setup
+view, the game view, the score picker. Keep that separation — the scoring
+helpers (`points`, `totalAfter`, `buildSequence`, `knownTricks`) touch no DOM and
+are the part where real bugs live.
 
-Rule logic — score calculation, bid validation, round progression, running
-totals, end-of-game detection — belongs in plain TypeScript functions with no
-DOM access, no timers, and no framework imports. The UI reads that state and
-renders it.
+- **The stored state is a file format.** It carries a version (`v`) and the key
+  is versioned too (`plump-state-v3`). `load()` refuses anything with a
+  different version rather than trying to migrate, so an old save can never
+  corrupt a new build. Bump both when the shape changes.
+- **Storage is wrapped, never assumed.** `localStorage` throws in private mode
+  and when cookies are blocked; the `store` shim falls back to memory so the app
+  degrades instead of dying.
+- **Render is a full redraw** from state on every change. It is fast enough at
+  this size, and it keeps the display impossible to desync from the data.
+- **Cells are real `<button>` elements**, not clickable `<td>`s, so the board
+  works with a keyboard and a screen reader.
 
-The reason is testability. Pure functions are exhaustively testable in
-milliseconds, and the scoring rules are where the real bugs live. If score
-calculation is tangled into a click handler it can only be tested by driving a
-browser, which is slow enough that the edge cases quietly stop being covered.
-
-Practical consequences:
-
-- Rule functions take state and return new state. No mutation of shared objects.
-- **Persistence and time are injected, never ambient.** Pass storage and clock
-  in as arguments rather than reaching for `localStorage` or `Date.now()` inside
-  rule code. Tests that cannot control those cannot test restore behavior.
-- The stored game state is effectively a file format. Version it from the first
-  commit, so a later rule change doesn't corrupt games saved by an older build.
-
-## Testing expectations
-
-- **Scoring: exhaustive.** Every branch of making, missing, and bidding zero.
-  This layer is worth near-total coverage — it is small, pure, and the entire
-  point of the app.
-- **Edge cases deserve named tests**, not just happy paths: bid zero and take
-  zero, bid zero and take one, everyone missing, the bid-sum restriction on the
-  last bidder, hand-size progression at the turn, and final-round totals with
-  ties.
-- **Persistence: round-trip tested.** Save mid-game, restore, and assert the
-  state is identical. Add a test per stored-format version once one exists.
-- **UI: representative, not exhaustive.** A handful of Playwright flows on a
-  mobile viewport — score a full round, reload mid-game and confirm nothing was
-  lost, rotate the device.
-- Prefer table-driven tests for scoring branches; they stay readable as the rule
-  count grows.
-
-## Domain notes
+## Domain rules
 
 **Variants of Plump differ between families and regions, so the rules recorded
 here are the spec.** Disagreements about intended behavior get settled in this
-section, not in test fixtures. Fill each in as it is implemented:
+section, not in test fixtures.
 
-- Points for making a bid exactly: _to document_
-- What a missed bid scores, and what earns a "plump": _to document_
-- Whether the bid total is forbidden from equalling the number of tricks, and
-  who is constrained by it: _to document_
-- Hand-size progression across rounds, and how many rounds a game runs:
-  _to document_
-- Player count supported: _to document_
+- **Making a bid of 1 or more:** 10 + the number of tricks bid (1 → 11, 8 → 18).
+- **Making a bid of zero:** 5 points. Written `05` on the paper sheet.
+- **Missing a bid ("plump"):** 0 points, regardless of how far off. Shown as ●.
+- **Hand-size progression:** starts at a chosen maximum (default 8), one card
+  fewer each round down to a chosen turning point (default 2), then back up.
+  Both ends and the "and up again" half are configurable at setup.
+- **Deal rotation:** chosen first dealer, then clockwise by round index.
+- **Players:** 2–10, capped further by what a 52-card deck can deal.
+- **Bid-total restriction** (whether the bids may sum to the hand size, and who
+  is constrained): _not modelled._ The app only records outcomes, so the table
+  enforces this rule itself. The entered tricks are checked against hand size
+  and flagged, but never blocked.
 
 ## Conventions
 
-- Language of code, comments, identifiers, and commit messages: **English.**
-  UI-facing strings are Swedish — keep them in a separate strings module rather
-  than inline, so the two never get confused.
-- Don't commit build output; `dist/` is deployed by CI, not from a developer
-  machine.
+- **Swedish UI, Swedish comments, English identifiers.** The file is small and
+  self-contained, so strings live inline where they are used rather than in a
+  separate module.
+- Commit messages: Swedish, matching the existing history.
+- Don't commit scratch scripts, screenshots, or `node_modules` from local
+  Playwright runs; keep them outside the repo.
