@@ -87,6 +87,16 @@ view, the game view, the bid/result picker. Keep that separation — the helpers
   two-phase round: `nextBid(r)` returns a player while bids are missing, then
   `nextResult(r)` takes over. `currentRound()` is the first round that isn't
   finished, and everything else is locked unless the user turns on fix mode.
+- **`buildBoard(g, opts)` renders any match**, live or archived. Every helper
+  takes the match (`g`: players, rounds, cells, firstDealer) as its first
+  argument rather than reading the global — that is what lets the history view
+  reuse the same table read-only (no `opts.onCell` → `<div>` cells, no
+  handlers).
+- **Finished matches are archived** into `state.archive`, keyed by `matchId` so
+  re-archiving after a late correction updates the entry instead of duplicating
+  it. Archiving happens when the last cell is filled and again on new
+  match/restart/clear. The list is reachable only from the setup view — never
+  mid-match, by request.
 - **The stored state is a file format.** It carries a version (`v`) and the key
   is versioned too (`plump-state-v4`). `load()` refuses anything with a
   different version rather than trying to migrate, so an old save can never

@@ -52,10 +52,13 @@
 
   main{max-width:900px;margin:0 auto;padding:16px 14px 40px;width:100%}
 
-  /* under match: tabellen scrollar för sig så rubriken alltid syns */
-  body.playing{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-  body.playing #game{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px calc(10px + env(safe-area-inset-bottom))}
-  body.playing .tablewrap{flex:0 1 auto;min-height:0}
+  /* tabellvyer: tabellen scrollar för sig så rubriken alltid syns */
+  body.board{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+  body.board #game,body.board #history{
+    flex:1;min-height:0;display:flex;flex-direction:column;
+    padding:12px 14px calc(10px + env(safe-area-inset-bottom));
+  }
+  body.board .tablewrap{flex:0 1 auto;min-height:0}
 
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
   h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 12px;font-weight:700}
@@ -83,34 +86,56 @@
   .seq b{color:var(--ink)}
   .warnline{color:var(--accent);font-size:13px;font-weight:600;margin-top:6px}
 
+  /* ---- Tidigare matcher ---- */
+  .matches{display:flex;flex-direction:column;gap:8px}
+  .match{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;
+  }
+  .match .body{flex:1;min-width:0}
+  .match .top{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .match .bot{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .match .score{font-size:19px;font-weight:900}
+  .match .chev{color:var(--muted);font-size:18px}
+  .match.partial .top{font-weight:700;color:var(--muted)}
+
   /* ---- Tabell ---- */
   .tablewrap{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
     overflow:auto; -webkit-overflow-scrolling:touch;
   }
-  table{border-collapse:separate;border-spacing:0;width:100%}
-  th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center}
-  th:last-child,td:last-child{border-right:0}
-  tr:last-child td{border-bottom:0}
+  table.board{border-collapse:separate;border-spacing:0;width:100%}
+  table.board th,table.board td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center}
+  table.board th:last-child,table.board td:last-child{border-right:0}
+  table.board tr:last-child td{border-bottom:0}
 
-  thead th{position:sticky;top:0;z-index:10;background:var(--card)}
-  th.corner,td.cards{position:sticky;left:0;z-index:12;background:var(--shade);width:66px;min-width:66px}
+  table.board thead th{position:sticky;top:0;z-index:10;background:var(--card)}
+  th.corner,td.cards{position:sticky;left:0;z-index:12;background:var(--shade);width:76px;min-width:76px}
   thead th.corner{z-index:20}
   th.name{padding:8px 6px 4px;min-width:80px}
   th.name .nm{font-size:14px;font-weight:800;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   th.name .tot{display:block;font-size:22px;font-weight:900;padding-bottom:6px}
   th.name.lead .tot{color:var(--good)}
-  th.corner span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 4px}
+  th.corner span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 4px;line-height:1.25}
 
   td.cards{padding:6px 4px}
   td.cards b{display:block;font-size:19px;font-weight:800}
-  td.cards .giv{display:block;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td.cards .giv{
+    display:block;font-size:10px;color:var(--muted);font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  td.cards .giv i{font-style:normal;letter-spacing:.04em;opacity:.7}
   tr.active td.cards b,tr.active td.cards .giv{color:var(--accent)}
 
   td.cell{padding:0}
-  td.cell button{width:100%;border:0;background:none;padding:9px 2px 7px;display:block}
+  td.cell button,td.cell .static{width:100%;border:0;background:none;padding:11px 2px 7px;display:block;position:relative}
   td.cell .pts{font-size:19px;font-weight:800;display:block;min-height:23px}
   td.cell .run{font-size:11px;color:var(--muted);display:block;min-height:14px}
+  td.cell .deal{
+    position:absolute;top:1px;left:4px;font-size:9px;font-weight:800;
+    letter-spacing:.04em;color:var(--muted);opacity:.8;
+  }
+  tr.active td.cell .deal{color:var(--accent);opacity:1}
   td.cell.empty .pts{color:var(--faint);font-weight:400}
   td.cell.bidonly .pts{color:var(--muted);font-weight:600}
   td.cell.bidonly .run{color:var(--accent);font-weight:700}
@@ -129,6 +154,7 @@
   .next small{display:block;font-size:12px;font-weight:600;opacity:.85;margin-top:2px;letter-spacing:.03em}
   .next.done{background:var(--card);border:1px solid var(--line);color:var(--ink)}
   .banner{margin-top:10px;padding:14px;border-radius:var(--radius);background:var(--card);border:1px solid var(--line);text-align:center;font-weight:800}
+  .banner small{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-top:3px}
   .warn{margin-top:8px;color:var(--accent);font-size:13px;text-align:center}
   .legend{margin:8px 0 0;font-size:12px;color:var(--muted);text-align:center}
   .foot{display:flex;gap:10px;margin-top:10px}
@@ -172,7 +198,7 @@
   .grid button.plump{border-color:var(--accent)}
   .grid button.plump .p{color:var(--accent)}
   .grid.two button{padding:14px 6px}
-  .sheet .extras{display:flex;gap:9px;margin-top:10px}
+  .sheet .extras{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}
   .sheet .extras button{
     flex:1;padding:11px;border-radius:12px;border:1px solid var(--line);
     background:var(--bg);font-weight:700;font-size:14px;
@@ -222,22 +248,40 @@
 
   <button class="btn primary" id="startBtn" type="button">Starta match</button>
   <button class="btn wide" id="backBtn" type="button" hidden style="margin-top:10px">← Tillbaka till matchen</button>
-  <p class="hint" id="setupHint"></p>
+
+  <div class="panel" id="historyPanel" hidden style="margin-top:16px">
+    <h2>Tidigare matcher</h2>
+    <div class="matches" id="matchList"></div>
+    <button class="btn wide" id="clearHistory" type="button" style="margin-top:12px">Rensa historiken</button>
+  </div>
 </main>
 
 <!-- ============ SPEL ============ -->
 <main id="game" hidden>
   <div class="tablewrap">
-    <table id="board"></table>
+    <table class="board" id="board"></table>
   </div>
   <button class="next" id="nextBtn" type="button"></button>
   <div id="banner" class="banner" hidden></div>
   <div id="warn" class="warn" hidden></div>
-  <p class="legend">● = plump (0 p) · grå siffra = lagt bud</p>
+  <p class="legend">● = plump (0 p) · grå siffra = lagt bud · <b>ger</b> = delar ut korten</p>
   <div class="foot">
     <button class="btn" id="fixBtn" type="button">Rätta äldre</button>
     <button class="btn" id="newSame" type="button">Ny match</button>
     <button class="btn" id="reset" type="button">Rensa allt</button>
+  </div>
+</main>
+
+<!-- ============ HISTORIK ============ -->
+<main id="history" hidden>
+  <div class="tablewrap">
+    <table class="board" id="histBoard"></table>
+  </div>
+  <div id="histInfo" class="banner"></div>
+  <p class="legend">● = plump (0 p) · <b>ger</b> = delade ut korten</p>
+  <div class="foot">
+    <button class="btn" id="histBack" type="button">← Tillbaka</button>
+    <button class="btn" id="histDelete" type="button">Ta bort matchen</button>
   </div>
 </main>
 
@@ -260,6 +304,7 @@
 
   var KEY = "plump-state-v4";
   var MAX_PLAYERS = 10;
+  var MAX_HISTORY = 25;
 
   /* localStorage om det går, annars minne (privat läge, blockerade cookies) */
   var store = (function(){
@@ -279,7 +324,7 @@
 
   function blank(){
     return { v:4, players:["",""], playerCount:0, firstDealer:0,
-             rounds:[], cells:{}, started:false };
+             rounds:[], cells:{}, started:false, matchId:1, archive:[] };
   }
   function save(){ try{ store.setItem(KEY, JSON.stringify(state)); }catch(e){} }
   function load(){
@@ -291,6 +336,8 @@
       s.cells = s.cells || {};
       s.rounds = s.rounds || [];
       s.firstDealer = s.firstDealer || 0;
+      s.archive = Array.isArray(s.archive) ? s.archive : [];
+      s.matchId = s.matchId || 1;
       if(typeof s.playerCount !== "number") s.playerCount = s.players.length;
       return s;
     }catch(e){ return null; }
@@ -299,27 +346,31 @@
   var state = load() || blank();
   var history = [];       // för Ångra
   var fixMode = false;    // tillåt rättning i äldre rundor
+  var viewing = null;     // arkiverad match som visas just nu
   var toastTimer = null;
 
   /* ---------- rutor och poäng ----------
      En ruta är {b:bud, m:null|true|false}. m=null betyder att budet är lagt
-     men handen inte spelad än. */
+     men handen inte spelad än. Hjälpfunktionerna tar emot en "match" (g) med
+     players, rounds, cells och firstDealer, så samma kod ritar både den
+     pågående matchen och en arkiverad. */
   function key(r,p){ return r + ":" + p; }
-  function cellOf(r,p){ return state.cells[key(r,p)] || null; }
+  function cellOf(g,r,p){ return g.cells[key(r,p)] || null; }
   function pointsOf(c){
     if(!c || c.m === null || c.m === undefined) return null;
     if(c.m === false) return 0;
     return c.b === 0 ? 5 : 10 + c.b;
   }
-  function totalAfter(p, r){
+  function totalAfter(g, p, r){
     var sum = 0;
     for(var i=0;i<=r;i++){
-      var pts = pointsOf(cellOf(i,p));
+      var pts = pointsOf(cellOf(g,i,p));
       if(pts !== null) sum += pts;
     }
     return sum;
   }
-  function total(p){ return totalAfter(p, state.rounds.length - 1); }
+  function totalOf(g, p){ return totalAfter(g, p, g.rounds.length - 1); }
+  function totalsOf(g){ return g.players.map(function(_,p){ return totalOf(g,p); }); }
 
   function buildSequence(max, min, upAgain){
     var seq = [], i;
@@ -330,69 +381,68 @@
   }
 
   /* ---------- givare och budordning ---------- */
-  function dealerIdx(r){
-    return (state.firstDealer + r) % state.players.length;
-  }
-  function dealerName(r){ return state.players[dealerIdx(r)] || ""; }
+  function dealerIdx(g,r){ return (g.firstDealer + r) % g.players.length; }
+  function dealerName(g,r){ return g.players[dealerIdx(g,r)] || ""; }
   /* Den som sitter efter given bjuder först, given bjuder sist. */
-  function bidOrder(r){
-    var n = state.players.length, out = [];
-    for(var k=1;k<=n;k++) out.push((state.firstDealer + r + k) % n);
+  function bidOrder(g,r){
+    var n = g.players.length, out = [];
+    for(var k=1;k<=n;k++) out.push((g.firstDealer + r + k) % n);
     return out;
   }
-  function bidSum(r, exceptP){
+  function bidSum(g,r,exceptP){
     var s = 0;
-    for(var p=0;p<state.players.length;p++){
+    for(var p=0;p<g.players.length;p++){
       if(p === exceptP) continue;
-      var c = cellOf(r,p);
+      var c = cellOf(g,r,p);
       if(c) s += c.b;
     }
     return s;
   }
-  function othersAllBid(r, p){
-    for(var i=0;i<state.players.length;i++){
-      if(i !== p && !cellOf(r,i)) return false;
+  function othersAllBid(g,r,p){
+    for(var i=0;i<g.players.length;i++){
+      if(i !== p && !cellOf(g,r,i)) return false;
     }
     return true;
   }
   /* Given får inte bjuda så att budsumman blir exakt antalet kort. */
-  function forbiddenBid(r, p){
-    if(p !== dealerIdx(r) || !othersAllBid(r,p)) return null;
-    var f = state.rounds[r] - bidSum(r,p);
-    return (f >= 0 && f <= state.rounds[r]) ? f : null;
+  function forbiddenBid(g,r,p){
+    if(p !== dealerIdx(g,r) || !othersAllBid(g,r,p)) return null;
+    var f = g.rounds[r] - bidSum(g,r,p);
+    return (f >= 0 && f <= g.rounds[r]) ? f : null;
   }
   /* stick som är kända: bara klarade bud skrivs upp */
-  function knownTricks(r){
+  function knownTricks(g,r){
     var s = 0;
-    for(var p=0;p<state.players.length;p++){
-      var c = cellOf(r,p);
+    for(var p=0;p<g.players.length;p++){
+      var c = cellOf(g,r,p);
       if(c && c.m === true) s += c.b;
     }
     return s;
   }
-
-  function nextBid(r){
-    var order = bidOrder(r);
-    for(var i=0;i<order.length;i++) if(!cellOf(r,order[i])) return order[i];
+  function nextBid(g,r){
+    var order = bidOrder(g,r);
+    for(var i=0;i<order.length;i++) if(!cellOf(g,r,order[i])) return order[i];
     return null;
   }
-  function nextResult(r){
-    var order = bidOrder(r);
+  function nextResult(g,r){
+    var order = bidOrder(g,r);
     for(var i=0;i<order.length;i++){
-      var c = cellOf(r,order[i]);
+      var c = cellOf(g,r,order[i]);
       if(c && (c.m === null || c.m === undefined)) return order[i];
     }
     return null;
   }
-  function roundDone(r){ return nextBid(r) === null && nextResult(r) === null; }
-  function currentRound(){
-    for(var r=0;r<state.rounds.length;r++) if(!roundDone(r)) return r;
+  function roundDone(g,r){ return nextBid(g,r) === null && nextResult(g,r) === null; }
+  function currentRound(g){
+    for(var r=0;r<g.rounds.length;r++) if(!roundDone(g,r)) return r;
     return -1;
   }
+  function hasCells(g){ for(var k in g.cells) return true; return false; }
 
   var el = {
     setup:document.getElementById("setup"),
     game:document.getElementById("game"),
+    historyView:document.getElementById("history"),
     playerList:document.getElementById("playerList"),
     addPlayer:document.getElementById("addPlayer"),
     dealer:document.getElementById("dealer"),
@@ -402,7 +452,9 @@
     seqPreview:document.getElementById("seqPreview"),
     startBtn:document.getElementById("startBtn"),
     backBtn:document.getElementById("backBtn"),
-    setupHint:document.getElementById("setupHint"),
+    historyPanel:document.getElementById("historyPanel"),
+    matchList:document.getElementById("matchList"),
+    clearHistory:document.getElementById("clearHistory"),
     board:document.getElementById("board"),
     nextBtn:document.getElementById("nextBtn"),
     banner:document.getElementById("banner"),
@@ -412,6 +464,10 @@
     fixBtn:document.getElementById("fixBtn"),
     newSame:document.getElementById("newSame"),
     reset:document.getElementById("reset"),
+    histBoard:document.getElementById("histBoard"),
+    histInfo:document.getElementById("histInfo"),
+    histBack:document.getElementById("histBack"),
+    histDelete:document.getElementById("histDelete"),
     toast:document.getElementById("toast"),
     backdrop:document.getElementById("backdrop"),
     sheetMeta:document.getElementById("sheetMeta"),
@@ -433,6 +489,101 @@
     el.toast.hidden = false;
     if(toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ el.toast.hidden = true; }, 2600);
+  }
+
+  /* ---------- tabellen ----------
+     Ritas likadant för pågående match och arkiverad; opts.onCell saknas när
+     tavlan bara ska läsas. */
+  function buildBoard(g, opts){
+    opts = opts || {};
+    var totals = totalsOf(g);
+    var best = Math.max.apply(null, totals);
+
+    var t = document.createElement("table");
+    t.className = "board";
+
+    var thead = document.createElement("thead");
+    var hr = document.createElement("tr");
+    var corner = document.createElement("th");
+    corner.className = "corner";
+    corner.innerHTML = "<span>Kort</span>";
+    hr.appendChild(corner);
+    g.players.forEach(function(name,p){
+      var th = document.createElement("th");
+      th.className = "name" + (totals[p] === best && best > 0 ? " lead" : "");
+      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name;
+      var tot = document.createElement("span"); tot.className = "tot"; tot.textContent = totals[p];
+      th.appendChild(nm); th.appendChild(tot);
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    t.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    g.rounds.forEach(function(cards, r){
+      var tr = document.createElement("tr");
+      var isActive = r === opts.active;
+      tr.className = (isActive ? "active" : "") +
+                     (opts.onCell && !isActive && !opts.unlocked ? " locked" : "");
+
+      var td0 = document.createElement("td");
+      td0.className = "cards";
+      var b = document.createElement("b"); b.textContent = cards;
+      var giv = document.createElement("span"); giv.className = "giv";
+      var i = document.createElement("i"); i.textContent = "ger ";
+      giv.appendChild(i);
+      giv.appendChild(document.createTextNode(dealerName(g,r)));
+      td0.appendChild(b); td0.appendChild(giv);
+      tr.appendChild(td0);
+
+      var over = knownTricks(g,r) > cards;
+      var dealer = dealerIdx(g,r);
+
+      g.players.forEach(function(_,p){
+        var c = cellOf(g,r,p);
+        var pending = c && (c.m === null || c.m === undefined);
+        var td = document.createElement("td");
+        td.className = "cell" +
+          (!c ? " empty" : (pending ? " bidonly" : (c.m === false ? " plumped" : ""))) +
+          (over ? " over" : "") +
+          (isActive && p === opts.turnP ? " turn" : "");
+
+        var inner = document.createElement(opts.onCell ? "button" : "div");
+        if(opts.onCell) inner.type = "button"; else inner.className = "static";
+
+        if(p === dealer){
+          var d = document.createElement("span");
+          d.className = "deal"; d.textContent = "ger";
+          d.setAttribute("aria-label", "ger korten");
+          inner.appendChild(d);
+        }
+        var pts = document.createElement("span"); pts.className = "pts";
+        var run = document.createElement("span"); run.className = "run";
+        if(!c){
+          pts.textContent = "–"; run.textContent = "";
+        } else if(pending){
+          pts.textContent = c.b; run.textContent = "bud";
+        } else {
+          pts.textContent = c.m === false ? "●" : pointsOf(c);
+          run.textContent = totalAfter(g, p, r);
+        }
+        inner.appendChild(pts); inner.appendChild(run);
+        if(opts.onCell){
+          inner.addEventListener("click", function(){ opts.onCell(r,p); });
+        }
+        td.appendChild(inner);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    t.appendChild(tbody);
+    return t;
+  }
+
+  function winnersOf(g){
+    var totals = totalsOf(g);
+    var best = Math.max.apply(null, totals);
+    return { best: best, names: g.players.filter(function(_,p){ return totals[p] === best; }) };
   }
 
   /* ---------- STARTVYN ---------- */
@@ -532,23 +683,25 @@
   el.minCards.addEventListener("change", updateSetupHint);
   el.upAgain.addEventListener("change", updateSetupHint);
 
-  function hasCells(){ for(var k in state.cells) return true; return false; }
-
   function showSetup(){
-    el.game.hidden = true; el.setup.hidden = false;
+    viewing = null;
+    el.game.hidden = true; el.historyView.hidden = true; el.setup.hidden = false;
     el.editBtn.hidden = true; el.undoBtn.hidden = true;
-    document.body.classList.remove("playing");
-    el.backBtn.hidden = !(state.rounds.length && hasCells());
+    document.body.classList.remove("board");
+    el.backBtn.hidden = !(state.rounds.length && hasCells(state));
     el.startBtn.textContent = el.backBtn.hidden ? "Starta match" : "Starta om matchen";
     renderPlayers();
+    renderMatchList();
   }
 
   el.startBtn.addEventListener("click", function(){
-    if(hasCells() && !confirm("Starta om? Alla poäng nollställs.")) return;
+    if(hasCells(state) && !confirm("Starta om? Alla poäng nollställs.")) return;
+    archiveCurrent();
     state.players = state.players.map(function(_,i){ return nameOf(i); });
     state.rounds = buildSequence(Number(el.maxCards.value), Number(el.minCards.value), el.upAgain.checked);
     state.playerCount = state.players.length;
     state.cells = {};
+    state.matchId = (state.matchId || 1) + 1;
     state.started = true;
     history = []; fixMode = false;
     save(); renderGame();
@@ -563,92 +716,137 @@
     state.started = true; save(); renderGame();
   });
 
+  /* ---------- ARKIV ---------- */
+  function stamp(){
+    try{
+      return new Date().toISOString();
+    }catch(e){ return ""; }
+  }
+  function prettyDate(iso){
+    if(!iso) return "";
+    try{
+      var d = new Date(iso);
+      return d.toLocaleDateString("sv-SE", {day:"numeric", month:"short"}) + " " +
+             d.toLocaleTimeString("sv-SE", {hour:"2-digit", minute:"2-digit"});
+    }catch(e){ return ""; }
+  }
+  /* Sparar den pågående matchen i arkivet, eller uppdaterar posten om den
+     redan ligger där (matchen kan ju rättas efter att den blivit klar). */
+  function archiveCurrent(){
+    if(!state.rounds.length || !hasCells(state)) return;
+    var w = winnersOf(state);
+    var entry = {
+      id: state.matchId,
+      ts: stamp(),
+      players: state.players.slice(),
+      rounds: state.rounds.slice(),
+      firstDealer: state.firstDealer,
+      cells: JSON.parse(JSON.stringify(state.cells)),
+      totals: totalsOf(state),
+      winners: w.names,
+      best: w.best,
+      done: currentRound(state) === -1
+    };
+    var at = -1;
+    for(var i=0;i<state.archive.length;i++){
+      if(state.archive[i].id === entry.id){ at = i; break; }
+    }
+    if(at >= 0){
+      entry.ts = state.archive[at].ts || entry.ts;   // behåll ursprungstiden
+      state.archive[at] = entry;
+    } else {
+      state.archive.unshift(entry);
+      if(state.archive.length > MAX_HISTORY) state.archive.length = MAX_HISTORY;
+    }
+    save();
+  }
+
+  function renderMatchList(){
+    var list = state.archive || [];
+    el.historyPanel.hidden = list.length === 0;
+    el.matchList.innerHTML = "";
+    list.forEach(function(m){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "match" + (m.done ? "" : " partial");
+
+      var body = document.createElement("div"); body.className = "body";
+      var top = document.createElement("div"); top.className = "top";
+      top.textContent = m.done
+        ? "🏆 " + m.winners.join(" & ")
+        : "Avbruten match";
+      var bot = document.createElement("div"); bot.className = "bot";
+      bot.textContent = prettyDate(m.ts) + " · " + m.players.join(", ");
+      body.appendChild(top); body.appendChild(bot);
+
+      var score = document.createElement("span");
+      score.className = "score"; score.textContent = m.best;
+      var chev = document.createElement("span");
+      chev.className = "chev"; chev.textContent = "›";
+
+      b.appendChild(body); b.appendChild(score); b.appendChild(chev);
+      b.addEventListener("click", function(){ showHistory(m); });
+      el.matchList.appendChild(b);
+    });
+  }
+
+  function showHistory(m){
+    viewing = m;
+    el.setup.hidden = true; el.game.hidden = true; el.historyView.hidden = false;
+    el.editBtn.hidden = true; el.undoBtn.hidden = true;
+    document.body.classList.add("board");
+
+    var t = buildBoard(m, {});
+    el.histBoard.replaceWith(t);
+    t.id = "histBoard"; el.histBoard = t;
+
+    el.histInfo.innerHTML = "";
+    var head = document.createElement("span");
+    head.textContent = m.done
+      ? "🏆 " + m.winners.join(" & ") + " – " + m.best + " poäng"
+      : "Avbruten match";
+    var sub = document.createElement("small");
+    sub.textContent = prettyDate(m.ts) + " · " +
+                      m.rounds.length + (m.rounds.length === 1 ? " runda · " : " rundor · ") +
+                      m.players.length + " spelare";
+    el.histInfo.appendChild(head); el.histInfo.appendChild(sub);
+  }
+
+  el.histBack.addEventListener("click", showSetup);
+  el.histDelete.addEventListener("click", function(){
+    if(!viewing) return;
+    if(!confirm("Ta bort den här matchen ur historiken?")) return;
+    state.archive = state.archive.filter(function(m){ return m.id !== viewing.id; });
+    save(); showSetup();
+  });
+  el.clearHistory.addEventListener("click", function(){
+    if(!confirm("Rensa hela historiken? Pågående match påverkas inte.")) return;
+    state.archive = []; save(); renderMatchList();
+  });
+
   /* ---------- SPELVYN ---------- */
   function renderGame(){
-    el.setup.hidden = true;
+    viewing = null;
+    el.setup.hidden = true; el.historyView.hidden = true;
     el.game.hidden = false;
-    document.body.classList.add("playing");
+    document.body.classList.add("board");
     el.editBtn.hidden = false;
     el.undoBtn.hidden = false;
     el.undoBtn.disabled = history.length === 0;
     el.fixBtn.className = "btn" + (fixMode ? " on" : "");
     el.fixBtn.textContent = fixMode ? "Rättning på" : "Rätta äldre";
 
-    var active = currentRound();
-    var turnBid = active === -1 ? null : nextBid(active);
-    var turnRes = active === -1 ? null : nextResult(active);
+    var active = currentRound(state);
+    var turnBid = active === -1 ? null : nextBid(state, active);
+    var turnRes = active === -1 ? null : nextResult(state, active);
     // buden läggs klart först, så bara ett av stegen står i tur
     var turnP = turnBid !== null ? turnBid : turnRes;
-    var totals = state.players.map(function(_,p){ return total(p); });
-    var best = Math.max.apply(null, totals);
 
-    var t = document.createElement("table");
-
-    var thead = document.createElement("thead");
-    var hr = document.createElement("tr");
-    var corner = document.createElement("th");
-    corner.className = "corner";
-    corner.innerHTML = "<span>Kort<br>& giv</span>";
-    hr.appendChild(corner);
-    state.players.forEach(function(name,p){
-      var th = document.createElement("th");
-      th.className = "name" + (totals[p] === best && best > 0 ? " lead" : "");
-      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name;
-      var tot = document.createElement("span"); tot.className = "tot"; tot.textContent = totals[p];
-      th.appendChild(nm); th.appendChild(tot);
-      hr.appendChild(th);
+    var t = buildBoard(state, {
+      active: active, turnP: turnP, unlocked: fixMode, onCell: tapCell
     });
-    thead.appendChild(hr);
-    t.appendChild(thead);
-
-    var tbody = document.createElement("tbody");
-    state.rounds.forEach(function(cards, r){
-      var tr = document.createElement("tr");
-      var isActive = r === active;
-      tr.className = (isActive ? "active" : "") + (!isActive && !fixMode ? " locked" : "");
-
-      var td0 = document.createElement("td");
-      td0.className = "cards";
-      var b = document.createElement("b"); b.textContent = cards;
-      var giv = document.createElement("span"); giv.className = "giv"; giv.textContent = dealerName(r);
-      td0.appendChild(b); td0.appendChild(giv);
-      tr.appendChild(td0);
-
-      var over = knownTricks(r) > cards;
-
-      state.players.forEach(function(_,p){
-        var c = cellOf(r,p);
-        var pending = c && (c.m === null || c.m === undefined);
-        var td = document.createElement("td");
-        td.className = "cell" +
-          (!c ? " empty" : (pending ? " bidonly" : (c.m === false ? " plumped" : ""))) +
-          (over ? " over" : "") +
-          (isActive && p === turnP ? " turn" : "");
-
-        var btn = document.createElement("button");
-        btn.type = "button";
-        var pts = document.createElement("span"); pts.className = "pts";
-        var run = document.createElement("span"); run.className = "run";
-        if(!c){
-          pts.textContent = "–"; run.textContent = "";
-        } else if(pending){
-          pts.textContent = c.b; run.textContent = "bud";
-        } else {
-          pts.textContent = c.m === false ? "●" : pointsOf(c);
-          run.textContent = totalAfter(p, r);
-        }
-        btn.appendChild(pts); btn.appendChild(run);
-        btn.addEventListener("click", function(){ tapCell(r,p); });
-        td.appendChild(btn);
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-    t.appendChild(tbody);
-
     el.board.replaceWith(t);
-    t.id = "board";
-    el.board = t;
+    t.id = "board"; el.board = t;
 
     var activeRow = t.querySelector("tr.active");
     if(activeRow && activeRow.scrollIntoView) activeRow.scrollIntoView({block:"nearest"});
@@ -656,16 +854,17 @@
     renderNext(active, turnBid, turnRes);
 
     var bad = [];
-    state.rounds.forEach(function(cards,r){ if(knownTricks(r) > cards) bad.push(r+1); });
+    state.rounds.forEach(function(cards,r){ if(knownTricks(state,r) > cards) bad.push(r+1); });
     if(bad.length){
       el.warn.hidden = false;
       el.warn.textContent = "Obs: fler klarade stick än kort i runda " + bad.join(", ") + ".";
     } else el.warn.hidden = true;
 
     if(active === -1){
-      var winners = state.players.filter(function(_,p){ return totals[p] === best; });
+      var w = winnersOf(state);
       el.banner.hidden = false;
-      el.banner.textContent = "🏆 " + winners.join(" & ") + " vinner med " + best + " poäng!";
+      el.banner.textContent = "🏆 " + w.names.join(" & ") + " vinner med " + w.best + " poäng!";
+      archiveCurrent();
     } else {
       el.banner.hidden = true;
     }
@@ -682,18 +881,18 @@
     el.nextBtn.className = "next";
     el.nextBtn.disabled = false;
     var cards = state.rounds[active];
-    var who = turnBid !== null ? turnBid : turnRes;
     var main = document.createElement("span");
     var sub = document.createElement("small");
     if(turnBid !== null){
       main.textContent = "Bud: " + state.players[turnBid];
-      var laid = bidSum(active, -1);
-      sub.textContent = "Runda " + (active+1) + " · " + cards + " kort · giv " + dealerName(active) +
-                        " · budsumma hittills " + laid;
+      sub.textContent = "Runda " + (active+1) + " · " + cards + " kort · " +
+                        dealerName(state,active) + " ger · budsumma hittills " +
+                        bidSum(state, active, -1);
     } else {
       main.textContent = "Resultat: " + state.players[turnRes];
-      sub.textContent = "Runda " + (active+1) + " · " + cards + " kort · bjöd " +
-                        cellOf(active,turnRes).b;
+      sub.textContent = "Runda " + (active+1) + " · " + cards + " kort · " +
+                        dealerName(state,active) + " ger · bjöd " +
+                        cellOf(state,active,turnRes).b;
     }
     el.nextBtn.appendChild(main);
     el.nextBtn.appendChild(sub);
@@ -701,47 +900,49 @@
       if(turnBid !== null) openSheet(active, turnBid, "bud");
       else openSheet(active, turnRes, "resultat");
     };
-    return who;
   }
 
   function tapCell(r,p){
-    var active = currentRound();
+    var active = currentRound(state);
     if(!fixMode && r !== active){
       toast(active === -1
         ? "Matchen är slut. Tryck ”Rätta äldre” för att ändra."
         : "Bara runda " + (active+1) + " kan fyllas i. Tryck ”Rätta äldre” för att ändra.");
       return;
     }
-    var c = cellOf(r,p);
+    var c = cellOf(state,r,p);
     openSheet(r, p, c ? "resultat" : "bud");
   }
 
   /* ---------- väljaren ---------- */
   function openSheet(r,p,step){
     var cards = state.rounds[r];
-    var c = cellOf(r,p);
+    var c = cellOf(state,r,p);
     if(step === "resultat" && !c) step = "bud";
 
     el.sheetMeta.innerHTML = "";
     el.sheetMeta.appendChild(document.createTextNode(
-      "Runda " + (r+1) + " av " + state.rounds.length + " · " + cards + " kort · Giv: "));
-    var d = document.createElement("b"); d.textContent = dealerName(r);
+      "Runda " + (r+1) + " av " + state.rounds.length + " · " + cards + " kort · "));
+    var d = document.createElement("b"); d.textContent = dealerName(state,r);
     el.sheetMeta.appendChild(d);
+    el.sheetMeta.appendChild(document.createTextNode(" ger"));
 
     el.sheetGrid.innerHTML = "";
     el.sheetExtras.innerHTML = "";
     el.sheetSub.className = "sub";
 
     if(step === "bud"){
+      var isDealer = p === dealerIdx(state,r);
       el.sheetTitle.textContent = state.players[p] + " – hur många tar du?";
-      var forbidden = forbiddenBid(r,p);
-      var laid = bidSum(r,p);
+      var forbidden = forbiddenBid(state,r,p);
+      var laid = bidSum(state,r,p);
       if(forbidden !== null){
         el.sheetSub.className = "sub block";
-        el.sheetSub.textContent = "Du ger. De andra har bjudit " + laid +
+        el.sheetSub.textContent = "Du ger och bjuder sist. De andra har bjudit " + laid +
           " – därför är " + forbidden + " spärrat (summan skulle bli exakt " + cards + ").";
       } else {
-        el.sheetSub.textContent = "Bud lagda hittills: " + laid + " av " + cards + " kort.";
+        el.sheetSub.textContent = "Bud lagda hittills: " + laid + " av " + cards + " kort." +
+          (isDealer ? " Du ger." : "");
       }
       el.sheetGrid.className = "grid";
       for(var i=0;i<=cards;i++){
@@ -758,9 +959,7 @@
           el.sheetGrid.appendChild(btn);
         })(i);
       }
-      if(c){
-        addExtra("Rensa rutan", function(){ clearCell(r,p); });
-      }
+      if(c) addExtra("Rensa rutan", function(){ clearCell(r,p); });
     } else {
       var made = c.b === 0 ? 5 : 10 + c.b;
       el.sheetTitle.textContent = state.players[p] + " bjöd " + c.b;
@@ -806,30 +1005,30 @@
   }
 
   function setBid(r,p,bid){
-    var wasTurn = nextBid(r) === p;
+    var wasTurn = nextBid(state,r) === p;
     remember(r,p);
-    var c = cellOf(r,p);
+    var c = cellOf(state,r,p);
     state.cells[key(r,p)] = { b:bid, m: c ? c.m : null };
     save(); closeSheet(); renderGame();
 
     // i tur och ordning: gå vidare till nästa spelares bud, stanna när alla
     // bud är lagda så handen kan spelas
     if(wasTurn){
-      var nb = nextBid(r);
+      var nb = nextBid(state,r);
       if(nb !== null) openSheet(r, nb, "bud");
       else toast("Alla bud lagda – spela handen och fyll i resultatet.");
     }
   }
 
   function setResult(r,p,made){
-    var wasTurn = nextResult(r) === p;
+    var wasTurn = nextResult(state,r) === p;
     remember(r,p);
-    var c = cellOf(r,p);
+    var c = cellOf(state,r,p);
     state.cells[key(r,p)] = { b:c.b, m:made };
     save(); closeSheet(); renderGame();
 
     if(wasTurn){
-      var nr = nextResult(r);
+      var nr = nextResult(state,r);
       if(nr !== null) openSheet(r, nr, "resultat");
     }
   }
@@ -866,12 +1065,19 @@
 
   el.newSame.addEventListener("click", function(){
     if(!confirm("Starta ny match med samma spelare?")) return;
-    state.cells = {}; history = []; fixMode = false; save(); renderGame();
+    archiveCurrent();
+    state.cells = {};
+    state.matchId = (state.matchId || 1) + 1;
+    history = []; fixMode = false;
+    save(); renderGame();
   });
 
   el.reset.addEventListener("click", function(){
-    if(!confirm("Rensa allt och börja om från spelarlistan?")) return;
+    if(!confirm("Rensa allt och börja om från spelarlistan? Historiken behålls.")) return;
+    archiveCurrent();
+    var keep = state.archive, id = (state.matchId || 1) + 1;
     state = blank();
+    state.archive = keep; state.matchId = id;
     history = []; fixMode = false; save();
     el.maxCards.value = 8; el.minCards.value = 2; el.upAgain.checked = true;
     showSetup();

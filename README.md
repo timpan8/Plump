@@ -9,7 +9,9 @@ mobil, platta eller dator.
 1. **Lägg in spelarna** (2–10 st), välj vem som ger först och hur trappan ser
    ut. Standard är 8 kort ner till 2 och upp igen – samma trappa som på pappret.
 2. **Tabellen** visar en rad per runda. Vänsterkolumnen (som ligger kvar när du
-   scrollar i sidled) visar antal kort och vems giv rundan är.
+   scrollar i sidled) visar antal kort och **vem som ger** – och samma sak
+   märks ut med ett litet *ger* uppe i den spelarens ruta, så man ser det utan
+   att räkna sig fram från vem som bjuder först.
 3. **Den röda knappen under tabellen visar alltid nästa steg** – vems bud eller
    vems resultat som står i tur. Tryck på den och fyll i.
 
@@ -45,6 +47,19 @@ låses hela tavlan upp tills du trycker igen (låset slås alltid på vid omstar
 Varje ruta visar rundans poäng stort och **den löpande totalen** litet under.
 Totalsumman per spelare står alltid överst i den fastnålade rubriken. Ledaren
 markeras i grönt, och när sista rundan är ifylld visas vinnaren.
+
+### Tidigare matcher
+
+Färdigspelade matcher sparas automatiskt och listas under **Tidigare matcher**
+längst ner i startvyn – med datum, vinnare, slutpoäng och vilka som var med.
+Tryck på en rad för att se hela den gamla tavlan, precis som den såg ut när
+matchen tog slut. Där finns också *Ta bort matchen*, och *Rensa historiken*
+tömmer hela listan.
+
+Listan finns bara i startvyn, alltså **inte** åtkomlig mitt i en pågående
+match – du kommer dit via *Spelare* och tillbaka med *Tillbaka till matchen*.
+En match som avbryts (ny match startas innan sista rundan) sparas också, men
+märks som avbruten. De 25 senaste matcherna behålls.
 
 Övrigt: **Ångra** ångrar senaste inmatningen och **Ny match** nollställer
 poängen men behåller spelarna. **Spelare** går tillbaka till startvyn – där
